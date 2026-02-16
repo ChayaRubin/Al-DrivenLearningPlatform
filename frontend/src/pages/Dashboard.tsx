@@ -3,6 +3,17 @@ import { categoriesApi, promptsApi } from '../services/api';
 
 type Cat = { id: string; name: string; subCategories: { id: string; name: string }[] };
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  Programming: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&q=80',
+  Mathematics: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
+  'Data Science': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80',
+  'Generative AI': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&q=80',
+};
+
+function getCategoryImage(name: string): string {
+  return CATEGORY_IMAGES[name] ?? `https://picsum.photos/seed/${encodeURIComponent(name)}/400/280`;
+}
+
 export function Dashboard() {
   const [categories, setCategories] = useState<Cat[]>([]);
   const [categoryId, setCategoryId] = useState('');
@@ -18,14 +29,33 @@ export function Dashboard() {
   } | null>(null);
 
   useEffect(() => {
-    categoriesApi.list().then((r) => setCategories(r.data.data)).catch(() => setError('Failed to load categories'));
+    categoriesApi
+      .list()
+      .then((r) => setCategories(r.data.data))
+      .catch(() => setError('Failed to load categories'));
   }, []);
 
-  const subCategories = categoryId ? (categories.find((c) => c.id === categoryId)?.subCategories ?? []) : [];
+  const subCategories = categoryId
+    ? (categories.find((c) => c.id === categoryId)?.subCategories ?? [])
+    : [];
 
   useEffect(() => {
     setSubCategoryId('');
   }, [categoryId]);
+
+  const handleCardClick = (id: string) => {
+    setCategoryId(id);
+    setResult(null);
+    setError('');
+  };
+
+  const handleBackToCategories = () => {
+    setCategoryId('');
+    setSubCategoryId('');
+    setPrompt('');
+    setResult(null);
+    setError('');
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,60 +77,107 @@ export function Dashboard() {
     }
   };
 
+  const selectedCategory = categoryId ? categories.find((c) => c.id === categoryId) : null;
+
   return (
-    <>
-      <div className="header">
-        <h1 className="page-title">Dashboard</h1>
-      </div>
-      <div className="card">
-        <h2 style={{ marginBottom: '1rem', fontSize: '1rem' }}>New learning prompt</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Category</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-              <option value="">Select category</option>
+    <div className="dashboard-page">
+      {!categoryId ? (
+        <>
+          <header className="dashboard-header">
+            {/* <h1 className="dashboard-title">Dashboard</h1> */}
+            <p className="dashboard-subtitle">
+              Choose a category to start learning with AI-powered lessons.
+            </p>
+          </header>
+          <section className="dashboard-categories">
+            {/* <h2 className="dashboard-section-title">Categories</h2> */}
+            <div className="category-cards">
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <button
+                  key={c.id}
+                  type="button"
+                  className="category-card"
+                  onClick={() => handleCardClick(c.id)}
+                >
+                  <div
+                    className="category-card-image"
+                    style={{ backgroundImage: `url(${getCategoryImage(c.name)})` }}
+                  />
+                  <div className="category-card-body">
+                    <span>{c.name}</span>
+                    <span className="arrow">→</span>
+                  </div>
+                </button>
               ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Sub-category</label>
-            <select
-              value={subCategoryId}
-              onChange={(e) => setSubCategoryId(e.target.value)}
-              required
-              disabled={!categoryId}
-            >
-              <option value="">Select sub-category</option>
-              {subCategories.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>What do you want to learn?</label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
-              placeholder="e.g. Explain closures in JavaScript"
-              required
-            />
-          </div>
-          {error && <p className="error-msg">{error}</p>}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Generating lesson...' : 'Generate lesson'}
-          </button>
-        </form>
-      </div>
-      {result && (
-        <div className="card" style={{ marginTop: '1rem' }}>
-          <h3 style={{ marginBottom: '0.5rem' }}>{result.category?.name} / {result.subCategory?.name}</h3>
-          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.75rem' }}>{result.userPrompt}</p>
-          <div className="lesson-content">{result.generatedLesson}</div>
+            </div>
+          </section>
+        </>
+      ) : (
+        <div className="dashboard-lesson-flow">
+          <header className="lesson-header">
+            <button type="button" className="btn-back" onClick={handleBackToCategories}>
+              ← Categories
+            </button>
+            {selectedCategory && (
+              <div className="lesson-header-category">
+                <div
+                  className="selected-category-badge-image"
+                  style={{ backgroundImage: `url(${getCategoryImage(selectedCategory.name)})` }}
+                />
+                <strong className="selected-category-name">{selectedCategory.name}</strong>
+              </div>
+            )}
+          </header>
+
+          <section className="prompt-section">
+            <div className="prompt-form-card">
+              <h2 className="prompt-form-title">What do you want to learn?</h2>
+              <form onSubmit={handleSubmit} className="prompt-form">
+                <div className="form-group">
+                  <label>Sub-category</label>
+                  <select
+                    value={subCategoryId}
+                    onChange={(e) => setSubCategoryId(e.target.value)}
+                    required
+                  >
+                    <option value="">Select sub-category</option>
+                    {subCategories.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Your question or topic</label>
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={4}
+                    placeholder="e.g. Explain closures in JavaScript"
+                    required
+                  />
+                </div>
+                {error && <p className="error-msg">{error}</p>}
+                <button type="submit" className="btn btn-primary prompt-submit-btn" disabled={loading}>
+                  {loading ? 'Generating lesson...' : 'Generate lesson'}
+                </button>
+              </form>
+            </div>
+            {result && (
+              <div className="card lesson-result-card">
+                <div className="lesson-result-meta">
+                  <span className="lesson-result-category">
+                    {result.category?.name} / {result.subCategory?.name}
+                  </span>
+                  <p className="lesson-result-prompt">{result.userPrompt}</p>
+                </div>
+                <div className="lesson-content">{result.generatedLesson}</div>
+              </div>
+            )}
+          </section>
         </div>
       )}
-    </>
+    </div>
   );
 }

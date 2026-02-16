@@ -5,6 +5,9 @@ import { requireRole } from '../middlewares/role.middleware';
 import { validateCategoryName } from '../middlewares/validate.middleware';
 import {
   listUsers,
+  createUser,
+  updateUser,
+  deleteUser,
   listPrompts,
   listCategoriesAdmin,
   createCategory,
@@ -14,12 +17,19 @@ import {
   updateSubCategory,
   deleteSubCategory,
 } from '../controllers/admin.controller';
+import {
+  validateAdminCreateUser,
+  validateAdminUpdateUser,
+} from '../middlewares/validate.middleware';
 
 export const adminRoutes = Router();
 
 adminRoutes.use(authenticate, requireRole(Role.ADMIN));
 
 adminRoutes.get('/users', listUsers);
+adminRoutes.post('/users', validateAdminCreateUser, createUser);
+adminRoutes.patch('/users/:id', validateAdminUpdateUser, updateUser);
+adminRoutes.delete('/users/:id', deleteUser);
 adminRoutes.get('/prompts', listPrompts);
 
 adminRoutes.get('/categories', listCategoriesAdmin);
