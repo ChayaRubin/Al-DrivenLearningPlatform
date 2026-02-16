@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  phone        String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  prompts      Prompt[]
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String
+  createdAt     DateTime      @default(now())
+  subCategories SubCategory[]
+  prompts       Prompt[]
+}
+
+model SubCategory {
+  id         String   @id @default(cuid())
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  prompts    Prompt[]
+
+  @@index([categoryId])
+}
+
+model Prompt {
+  id               String      @id @default(cuid())
+  userPrompt       String
+  generatedLesson  String
+  userId           String
+  categoryId       String
+  subCategoryId    String
+  createdAt        DateTime    @default(now())
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subCategory      SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
