@@ -39,31 +39,50 @@ export function History() {
       ) : (
         <>
           {items.map((item) => (
-            <div key={item.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <strong>{item.category?.name ?? ''} / {item.subCategory?.name ?? ''}</strong>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{new Date(item.createdAt).toLocaleString()}</span>
+            <div key={item.id} className="card history-card">
+              <div className="history-card-header">
+                <strong className="history-card-category">
+                  {item.category?.name ?? ''} / {item.subCategory?.name ?? ''}
+                </strong>
+                <span className="history-card-date">
+                  {new Date(item.createdAt).toLocaleString()}
+                </span>
               </div>
-              <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>{item.userPrompt}</p>
+              <p className="history-card-prompt">{item.userPrompt}</p>
               <button
                 type="button"
-                className="btn btn-secondary"
-                style={{ marginTop: '0.5rem' }}
+                className="btn btn-light-blue history-card-btn"
                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
               >
                 {expandedId === item.id ? 'Hide lesson' : 'Show lesson'}
               </button>
               {expandedId === item.id && (
-                <div className="lesson-content" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
+                <div className="history-card-lesson lesson-content">
                   {item.generatedLesson}
                 </div>
               )}
             </div>
           ))}
           <div className="pagination">
-            <button type="button" className="btn btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-            <span>Page {page} of {totalPages} ({total} total)</span>
-            <button type="button" className="btn btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <button
+              type="button"
+              className="btn btn-light-blue"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page} of {totalPages} ({total} total)
+            </span>
+            <button
+              type="button"
+              className="btn btn-light-blue"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
           </div>
         </>
       )}

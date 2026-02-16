@@ -71,6 +71,11 @@ export const adminApi = {
     api.get<{ data: User[]; total: number; page: number; limit: number }>('/admin/users', {
       params: { page, limit },
     }),
+  createUser: (data: { name: string; phone: string; role?: string }) =>
+    api.post<{ data: User }>('/admin/users', data),
+  updateUser: (id: string, data: { name?: string; phone?: string; role?: string }) =>
+    api.patch<{ data: User }>(`/admin/users/${id}`, data),
+  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   prompts: (page = 1, limit = 10) =>
     api.get<{
       data: (PromptItem & { user?: { id: string; email: string } })[];

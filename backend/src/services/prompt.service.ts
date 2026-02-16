@@ -19,11 +19,7 @@ export async function createPrompt(input: CreatePromptInput) {
   const sub = subCategories.find((s) => s.id === input.subCategoryId);
   if (!sub) throw new NotFoundError('SubCategory not found');
 
-  const generatedLesson = await aiService.generateLesson(
-    category.name,
-    sub.name,
-    input.prompt
-  );
+  const generatedLesson = await aiService.generateLesson(category.name, sub.name, input.prompt);
 
   const prompt = await prisma.prompt.create({
     data: {
@@ -67,7 +63,7 @@ export async function listPrompts(page = 1, limit = 10) {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { id: true, email: true } },
+        user: { select: { id: true, name: true, phone: true } },
         category: { select: { name: true } },
         subCategory: { select: { name: true } },
       },

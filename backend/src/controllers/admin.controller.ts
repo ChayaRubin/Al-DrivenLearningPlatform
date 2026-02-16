@@ -14,6 +14,41 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
   }
 }
 
+export async function createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { name, phone, role } = req.body;
+    const user = await userService.adminCreateUser({ name, phone, role });
+    res.status(201).json({ data: user });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { name, phone, role } = req.body;
+    const payload: { name?: string; phone?: string; role?: string } = {};
+    if (name !== undefined) payload.name = name;
+    if (phone !== undefined) payload.phone = phone;
+    if (role !== undefined) payload.role = role;
+    const user = await userService.updateUser(id, payload);
+    res.json({ data: user });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    await userService.deleteUser(id);
+    res.status(204).send();
+  } catch (e) {
+    next(e);
+  }
+}
+
 export async function listPrompts(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
@@ -25,7 +60,11 @@ export async function listPrompts(req: Request, res: Response, next: NextFunctio
   }
 }
 
-export async function listCategoriesAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function listCategoriesAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const categories = await categoryService.listCategories();
     res.json({ data: categories });
@@ -34,7 +73,11 @@ export async function listCategoriesAdmin(req: Request, res: Response, next: Nex
   }
 }
 
-export async function createCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function createCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { name } = req.body;
     const category = await categoryService.createCategory(name);
@@ -44,7 +87,11 @@ export async function createCategory(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function updateCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -55,7 +102,11 @@ export async function updateCategory(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function deleteCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function deleteCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { id } = req.params;
     await categoryService.deleteCategory(id);
@@ -65,7 +116,11 @@ export async function deleteCategory(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function createSubCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function createSubCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { categoryId } = req.params;
     const { name } = req.body;
@@ -76,7 +131,11 @@ export async function createSubCategory(req: Request, res: Response, next: NextF
   }
 }
 
-export async function updateSubCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateSubCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -87,7 +146,11 @@ export async function updateSubCategory(req: Request, res: Response, next: NextF
   }
 }
 
-export async function deleteSubCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function deleteSubCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const { id } = req.params;
     await categoryService.deleteSubCategory(id);

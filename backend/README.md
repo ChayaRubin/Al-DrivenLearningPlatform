@@ -12,36 +12,61 @@ Copy `.env.example` to `.env` and set:
 - `JWT_SECRET` – Secret for signing JWTs (use a strong value in production)
 - `OPENAI_API_KEY` – Your OpenAI API key for lesson generation
 
-### 2. PostgreSQL (Docker)
+### 2. PostgreSQL – choose one
 
-From the `backend` directory:
+#### Option A: Local PostgreSQL via Docker (recommended for dev)
 
-```bash
-docker compose up -d
+1. **Install Docker**  
+   [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/) – install and start it (Docker must be running).
+
+2. **Start the database** – from the `backend` directory:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Check it’s running:**
+
+   ```bash
+   docker ps
+   ```
+
+   You should see a container like `mini-learning-db` (postgres:16-alpine).  
+   The `mini_learning` database is created automatically on first start.
+
+4. **Use this in `.env`:**
+
+   ```
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mini_learning?schema=public"
+   ```
+
+#### Option B: Real (cloud) PostgreSQL
+
+If Docker doesn’t work or you want a hosted DB, use a free PostgreSQL service and put its URL in `DATABASE_URL`:
+
+- **[Neon](https://neon.tech)** – sign up, create a project, copy the connection string.
+- **[Supabase](https://supabase.com)** – create a project → Settings → Database → Connection string (URI).
+- **[Railway](https://railway.app)** – new project → Add PostgreSQL → copy `DATABASE_URL`.
+
+Then in `backend/.env`:
+
+```
+DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require"
 ```
 
-This starts PostgreSQL on `localhost:5432` with:
-
-- User: `postgres`
-- Password: `postgres`
-- Database: `mini_learning`
-
-So `DATABASE_URL` can be:
-
-```
-postgresql://postgres:postgres@localhost:5432/mini_learning?schema=public
-```
+Use the exact URL from the provider (they often add `?sslmode=require` for SSL).
 
 ### 3. Install and database
 
 ```bash
 npm install
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npx prisma db seed
 ```
 
-Seed creates:
+- First time: `migrate dev` will create all tables. If asked for a migration name, use e.g. `init`.
+- Seed creates:
 
 - Admin user: `admin@example.com` / `admin123`
 - Categories: Programming (JavaScript, TypeScript), Mathematics (Algebra)
@@ -64,6 +89,14 @@ Server runs at `http://localhost:3000`.
 - `POST /prompts` – create prompt + AI lesson (auth required)
 - `GET /admin/users` – list users (admin only)
 - `GET /admin/prompts` – list prompts (admin only)
+
+## Troubleshooting
+
+**“Database doesn’t exist” / connection refused**
+
+- **Docker:** Ensure Docker Desktop is running, then from `backend/`: `docker compose up -d`. Run `docker ps` to confirm the postgres container is up.
+- **Port 5432 in use:** Another app may be using it. Stop that service or change the port in `docker-compose.yml` (e.g. `"5433:5432"`) and use port 5433 in `DATABASE_URL`.
+- **Use a cloud DB:** See “Option B: Real (cloud) PostgreSQL” above – sign up at Neon or Supabase, get a connection string, put it in `.env` as `DATABASE_URL`, then run `npx prisma migrate dev` and `npx prisma db seed`.
 
 ## Assumptions
 

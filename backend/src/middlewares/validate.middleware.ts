@@ -23,7 +23,9 @@ function validateBody(schema: ValidationSchema) {
           }
         }
         if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
-          next(new ValidationError(`Field "${field}" must be at least ${rules.minLength} characters`));
+          next(
+            new ValidationError(`Field "${field}" must be at least ${rules.minLength} characters`)
+          );
           return;
         }
       }
@@ -33,14 +35,13 @@ function validateBody(schema: ValidationSchema) {
 }
 
 export const validateRegister = validateBody({
-  email: { required: true, isEmail: true },
-  password: { required: true, minLength: 6 },
-  name: { required: true },
+  name: { required: true, minLength: 1 },
+  phone: { required: true, minLength: 1 },
 });
 
 export const validateLogin = validateBody({
-  email: { required: true, isEmail: true },
-  password: { required: true },
+  name: { required: true, minLength: 1 },
+  phone: { required: true, minLength: 1 },
 });
 
 export const validateCreatePrompt = validateBody({
@@ -50,3 +51,13 @@ export const validateCreatePrompt = validateBody({
 });
 
 export const validateCategoryName = validateBody({ name: { required: true, minLength: 1 } });
+
+export const validateAdminCreateUser = validateBody({
+  name: { required: true, minLength: 1 },
+  phone: { required: true, minLength: 1 },
+});
+
+export const validateAdminUpdateUser = validateBody({
+  name: { minLength: 1 },
+  phone: { minLength: 1 },
+});

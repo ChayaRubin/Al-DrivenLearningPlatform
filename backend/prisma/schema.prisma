@@ -13,14 +13,12 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  phone        String?
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
-  prompts      Prompt[]
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  prompts   Prompt[]
 }
 
 model Category {
