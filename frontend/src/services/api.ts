@@ -40,10 +40,10 @@ export type PromptItem = {
 };
 
 export const authApi = {
-  register: (email: string, password: string, name: string, phone?: string) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/register', { email, password, name, phone: phone || undefined }),
-  login: (email: string, password: string) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/login', { email, password }),
+  register: (name: string, phone: string) =>
+    api.post<{ data: { user: User; token: string } }>('/auth/register', { name, phone }),
+  login: (name: string, phone: string) =>
+    api.post<{ data: { user: User; token: string } }>('/auth/login', { name, phone }),
 };
 
 export const usersApi = {
