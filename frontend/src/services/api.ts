@@ -1,14 +1,16 @@
 import axios from 'axios';
 
 const BACKEND_URL = 'https://al-driven-learning-platform-s87z.vercel.app';
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-    ? BACKEND_URL
-    : '/api');
+
+function getApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_URL;
+  if (fromEnv && typeof fromEnv === 'string' && fromEnv.trim()) return fromEnv.trim();
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) return BACKEND_URL;
+  return '/api';
+}
 
 export const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: getApiBase(),
   headers: { 'Content-Type': 'application/json' },
 });
 

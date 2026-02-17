@@ -11,7 +11,13 @@ import { adminRoutes } from './routes/admin.routes';
 
 const app = express();
 
-app.use(cors(config.corsOrigin ? { origin: config.corsOrigin } : {}));
+app.use(
+  cors({
+    origin: config.corsOrigin || true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json());
 
 app.use('/auth', authRoutes);
