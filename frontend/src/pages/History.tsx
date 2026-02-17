@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usersApi } from '../services/api';
 import type { PromptItem } from '../services/api';
+import { PaginationBar } from '../components/PaginationBar';
 
 const LIMIT = 10;
 
@@ -63,27 +64,28 @@ export function History() {
               )}
             </div>
           ))}
-          <div className="pagination">
-            <button
-              type="button"
-              className="btn btn-light-blue"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <span>
-              Page {page} of {totalPages} ({total} total)
-            </span>
-            <button
-              type="button"
-              className="btn btn-light-blue"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
+          <PaginationBar>
+            <div className="pagination history-pagination">
+              <button
+                type="button"
+                className="btn   color: var(--gray-600);
+"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </button>
+              <span>Page {page} of {totalPages} ({total} total)</span>
+              <button
+                type="button"
+                className="btn btn-light-blue"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </PaginationBar>
         </>
       )}
     </>

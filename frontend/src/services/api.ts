@@ -17,9 +17,13 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const isAuthRequest =
+        err.config?.url?.includes('/auth/login') || err.config?.url?.includes('/auth/register');
+      if (!isAuthRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
@@ -40,10 +44,10 @@ export type PromptItem = {
 };
 
 export const authApi = {
-  register: (email: string, password: string, name: string, phone?: string) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/register', { email, password, name, phone: phone || undefined }),
-  login: (email: string, password: string) =>
-    api.post<{ data: { user: User; token: string } }>('/auth/login', { email, password }),
+  register: (name: string, phone: string) =>
+    api.post<{ data: { user: User; token: string } }>('/auth/register', { name, phone }),
+  login: (name: string, phone: string) =>
+    api.post<{ data: { user: User; token: string } }>('/auth/login', { name, phone }),
 };
 
 export const usersApi = {

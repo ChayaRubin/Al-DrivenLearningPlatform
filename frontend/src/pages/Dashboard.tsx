@@ -1,21 +1,26 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { categoriesApi, promptsApi } from '../services/api';
+import { PaginationBar } from '../components/PaginationBar';
 
 type Cat = { id: string; name: string; subCategories: { id: string; name: string }[] };
 
+const CATEGORIES_PER_PAGE = 9;
+
 const CATEGORY_IMAGES: Record<string, string> = {
-  Programming: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&q=80',
-  Mathematics: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
-  'Data Science': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80',
-  'Generative AI': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&q=80',
+  Programming: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80',
+  Mathematics: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80',
+  Graphics: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&q=80',
+  'DataScience': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80',
+  'Generative AI': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80',
 };
 
 function getCategoryImage(name: string): string {
-  return CATEGORY_IMAGES[name] ?? `https://picsum.photos/seed/${encodeURIComponent(name)}/400/280`;
+  return CATEGORY_IMAGES[name] ?? `https://picsum.photos/seed/${encodeURIComponent(name)}/600/360`;
 }
 
 export function Dashboard() {
   const [categories, setCategories] = useState<Cat[]>([]);
+  const [categoriesPage, setCategoriesPage] = useState(1);
   const [categoryId, setCategoryId] = useState('');
   const [subCategoryId, setSubCategoryId] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -79,20 +84,20 @@ export function Dashboard() {
 
   const selectedCategory = categoryId ? categories.find((c) => c.id === categoryId) : null;
 
+  const categoriesTotalPages = Math.ceil(categories.length / CATEGORIES_PER_PAGE) || 1;
+  const categoriesOnPage = categories.slice(
+    (categoriesPage - 1) * CATEGORIES_PER_PAGE,
+    categoriesPage * CATEGORIES_PER_PAGE
+  );
+
   return (
     <div className="dashboard-page">
       {!categoryId ? (
         <>
-          <header className="dashboard-header">
-            {/* <h1 className="dashboard-title">Dashboard</h1> */}
-            <p className="dashboard-subtitle">
-              Choose a category to start learning with AI-powered lessons.
-            </p>
-          </header>
           <section className="dashboard-categories">
-            {/* <h2 className="dashboard-section-title">Categories</h2> */}
+            <h2 className="dashboard-section-title">Choose a category to start learning with AI-powered lessons.</h2>
             <div className="category-cards">
-              {categories.map((c) => (
+              {categoriesOnPage.map((c) => (
                 <button
                   key={c.id}
                   type="button"
@@ -110,6 +115,27 @@ export function Dashboard() {
                 </button>
               ))}
             </div>
+            <PaginationBar>
+              <div className="pagination dashboard-categories-pagination">
+                <button
+                  type="button"
+                  className="btn btn-light-blue"
+                  disabled={categoriesPage <= 1}
+                  onClick={() => setCategoriesPage((p) => p - 1)}
+                >
+                  Previous
+                </button>
+                <span>Page {categoriesPage} of {categoriesTotalPages} ({categories.length} total)</span>
+                <button
+                  type="button"
+                  className="btn btn-light-blue"
+                  disabled={categoriesPage >= categoriesTotalPages}
+                  onClick={() => setCategoriesPage((p) => p + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            </PaginationBar>
           </section>
         </>
       ) : (
@@ -119,12 +145,16 @@ export function Dashboard() {
               ← Categories
             </button>
             {selectedCategory && (
-              <div className="lesson-header-category">
+              <div className="lesson-hero-banner">
                 <div
-                  className="selected-category-badge-image"
+                  className="lesson-hero-icon"
                   style={{ backgroundImage: `url(${getCategoryImage(selectedCategory.name)})` }}
+                  aria-hidden
                 />
-                <strong className="selected-category-name">{selectedCategory.name}</strong>
+                <div className="lesson-hero-text">
+                  <h1 className="lesson-hero-title">{selectedCategory.name}</h1>
+                  <p className="lesson-hero-subtitle">Generate a personalized lesson</p>
+                </div>
               </div>
             )}
           </header>
