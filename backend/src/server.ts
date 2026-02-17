@@ -11,7 +11,7 @@ import { adminRoutes } from './routes/admin.routes';
 
 const app = express();
 
-app.use(cors());
+app.use(cors(config.corsOrigin ? { origin: config.corsOrigin } : {}));
 app.use(express.json());
 
 app.use('/auth', authRoutes);

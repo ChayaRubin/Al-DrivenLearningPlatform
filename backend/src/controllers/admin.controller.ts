@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service';
+import type { UpdateUserInput } from '../services/user.service';
 import * as promptService from '../services/prompt.service';
 import * as categoryService from '../services/category.service';
 
@@ -32,7 +33,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     if (name !== undefined) payload.name = name;
     if (phone !== undefined) payload.phone = phone;
     if (role !== undefined) payload.role = role;
-    const user = await userService.updateUser(id, payload);
+    const user = await userService.updateUser(id, payload as UpdateUserInput);
     res.json({ data: user });
   } catch (e) {
     next(e);

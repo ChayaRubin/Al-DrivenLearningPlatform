@@ -15,4 +15,6 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
   },
+  /** Optional. Set in production to your frontend URL (e.g. https://your-app.vercel.app) for CORS. */
+  corsOrigin: process.env.CORS_ORIGIN || undefined,
 };
