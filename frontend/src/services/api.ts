@@ -11,15 +11,13 @@ function getApiBase(): string {
   return '/api';
 }
 
-const API_URL = getApiBase();
-
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: '', // set per-request in interceptor so build-time Node doesn't freeze it to '/api'
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
-  // config.baseURL = getApiBase();
+  config.baseURL = getApiBase();
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
