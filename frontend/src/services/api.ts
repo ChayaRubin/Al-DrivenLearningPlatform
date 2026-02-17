@@ -128,6 +128,7 @@ import axios from 'axios';
  * So the base URL MUST include /api.
  */
 const BASE_URL = 'https://al-driven-learning-platform-s87z.vercel.app/api';
+console.log("FORCE REBUILD - BASE:", BASE_URL);
 
 export const api = axios.create({
   baseURL: BASE_URL,
