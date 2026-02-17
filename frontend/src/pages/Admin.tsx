@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '../services/api';
 import type { User, PromptItem, Category, SubCategory } from '../services/api';
+import { PaginationBar } from '../components/PaginationBar';
 
 const LIMIT = 10;
 
@@ -17,10 +18,12 @@ export function Admin() {
   const [promptsTotal, setPromptsTotal] = useState(0);
   const [promptsPage, setPromptsPage] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesPage, setCategoriesPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Users: add form & edit
+  // Users: add form in slide-over & edit
+  const [addUserSlideOpen, setAddUserSlideOpen] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserRole, setNewUserRole] = useState<string>('USER');
@@ -73,6 +76,11 @@ export function Admin() {
       .finally(() => setLoading(false));
   }, [tab]);
 
+  useEffect(() => {
+    const maxPage = Math.ceil(categories.length / LIMIT) || 1;
+    setCategoriesPage((p) => Math.min(p, maxPage));
+  }, [categories.length]);
+
   const refreshUsers = () => {
     adminApi.users(usersPage, LIMIT).then((r) => {
       setUsers(r.data.data);
@@ -86,6 +94,11 @@ export function Admin() {
 
   const usersTotalPages = Math.ceil(usersTotal / LIMIT) || 1;
   const promptsTotalPages = Math.ceil(promptsTotal / LIMIT) || 1;
+  const categoriesTotalPages = Math.ceil(categories.length / LIMIT) || 1;
+  const categoriesOnPage = categories.slice(
+    (categoriesPage - 1) * LIMIT,
+    categoriesPage * LIMIT
+  );
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +109,7 @@ export function Admin() {
       setNewUserName('');
       setNewUserPhone('');
       setNewUserRole('USER');
+      setAddUserSlideOpen(false);
       refreshUsers();
     } catch (err: unknown) {
       const res = err as { response?: { data?: { error?: string } } };
@@ -215,79 +229,37 @@ export function Admin() {
     }
   };
 
+  const pageTitles: Record<Tab, string> = { users: 'Users', prompts: 'Prompts', categories: 'Categories' };
+
+  const IconPencil = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+  );
+  const IconTrash = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+  );
+
   return (
     <>
-      <div className="admin-header">
-        <h1 className="page-title">Admin</h1>
-        <div className="admin-tabs">
-          <button
-            type="button"
-            className={`btn ${tab === 'users' ? 'btn-primary' : 'btn-light-blue'}`}
-            onClick={() => { setTab('users'); setError(''); }}
-          >
-            Users
-          </button>
-          <button
-            type="button"
-            className={`btn ${tab === 'prompts' ? 'btn-primary' : 'btn-light-blue'}`}
-            onClick={() => { setTab('prompts'); setError(''); }}
-          >
-            Prompts
-          </button>
-          <button
-            type="button"
-            className={`btn ${tab === 'categories' ? 'btn-primary' : 'btn-light-blue'}`}
-            onClick={() => { setTab('categories'); setError(''); }}
-          >
-            Categories
-          </button>
+      <header className="admin-header">
+        <nav className="admin-nav-bar">
+          <button type="button" className={`admin-nav-link ${tab === 'users' ? 'active' : ''}`} onClick={() => { setTab('users'); setError(''); }}>Users</button>
+          <button type="button" className={`admin-nav-link ${tab === 'prompts' ? 'active' : ''}`} onClick={() => { setTab('prompts'); setError(''); }}>Prompts</button>
+          <button type="button" className={`admin-nav-link ${tab === 'categories' ? 'active' : ''}`} onClick={() => { setTab('categories'); setError(''); }}>Categories</button>
+        </nav>
+        <div className="admin-page-header">
+          <h1 className="admin-page-title">{pageTitles[tab]}</h1>
+          {tab === 'users' && (
+            <button type="button" className="admin-btn-primary" onClick={() => setAddUserSlideOpen(true)}>Add User</button>
+          )}
         </div>
-      </div>
+      </header>
       <div className="admin-body">
         {error && <p className="error-msg">{error}</p>}
         {loading ? (
           <p>Loading...</p>
         ) : tab === 'users' ? (
           <>
-            <form className="admin-add-form card" onSubmit={handleAddUser}>
-              <div className="form-group">
-                <label htmlFor="new-user-name">Name</label>
-                <input
-                  id="new-user-name"
-                  type="text"
-                  placeholder="Full name"
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="new-user-phone">Phone</label>
-                <input
-                  id="new-user-phone"
-                  type="text"
-                  placeholder="Phone number"
-                  value={newUserPhone}
-                  onChange={(e) => setNewUserPhone(e.target.value)}
-                  className="input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="new-user-role">Role</label>
-                <select
-                  id="new-user-role"
-                  value={newUserRole}
-                  onChange={(e) => setNewUserRole(e.target.value)}
-                  className="input"
-                  style={{ minWidth: 120 }}
-                >
-                  <option value="USER">User</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-              <button type="submit" className="btn btn-primary">Add user</button>
-            </form>
-            <div className="card table-wrap admin-content-card">
+            <div className="table-wrap admin-content-card admin-users-table">
               <table>
                 <thead>
                   <tr>
@@ -332,10 +304,10 @@ export function Admin() {
                               <option value="ADMIN">Admin</option>
                             </select>
                           </td>
-                          <td style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-500)' }}>{new Date(u.createdAt).toLocaleString()}</td>
+                          <td style={{ fontSize: 'var(--text-sm)', color: 'var(--admin-slate-light)' }}>{new Date(u.createdAt).toLocaleString()}</td>
                           <td className="admin-table-actions-col">
-                            <button type="button" className="btn btn-primary btn-sm" onClick={() => handleUpdateUser(u.id)}>Save</button>
-                            <button type="button" className="btn btn-light-blue btn-sm" onClick={() => { setEditingUserId(null); setEditingUserName(''); setEditingUserPhone(''); setEditingUserRole('USER'); }}>Cancel</button>
+                            <button type="button" className="admin-btn-primary" style={{ marginRight: 4 }} onClick={() => handleUpdateUser(u.id)}>Save</button>
+                            <button type="button" className="admin-btn-secondary" onClick={() => { setEditingUserId(null); setEditingUserName(''); setEditingUserPhone(''); setEditingUserRole('USER'); }}>Cancel</button>
                           </td>
                         </>
                       ) : (
@@ -343,10 +315,10 @@ export function Admin() {
                           <td>{u.name ?? '—'}</td>
                           <td>{u.phone ?? '—'}</td>
                           <td><span className="admin-role-badge">{u.role}</span></td>
-                          <td style={{ fontSize: 'var(--text-sm)' }}>{new Date(u.createdAt).toLocaleString()}</td>
+                          <td style={{ fontSize: 'var(--text-sm)', color: 'var(--admin-slate-light)' }}>{new Date(u.createdAt).toLocaleString()}</td>
                           <td className="admin-table-actions-col">
-                            <button type="button" className="btn btn-light-blue btn-sm" onClick={() => { setEditingUserId(u.id); setEditingUserName(u.name ?? ''); setEditingUserPhone(u.phone ?? ''); setEditingUserRole(u.role); }}>Edit</button>
-                            <button type="button" className="btn btn-light-blue btn-sm" onClick={() => handleDeleteUser(u.id)}>Delete</button>
+                            <button type="button" className="admin-icon-btn" onClick={() => { setEditingUserId(u.id); setEditingUserName(u.name ?? ''); setEditingUserPhone(u.phone ?? ''); setEditingUserRole(u.role); }} title="Edit" aria-label="Edit"><IconPencil /></button>
+                            <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteUser(u.id)} title="Delete" aria-label="Delete"><IconTrash /></button>
                           </td>
                         </>
                       )}
@@ -354,15 +326,46 @@ export function Admin() {
                   ))}
                 </tbody>
               </table>
-              <div className="pagination">
-                <button type="button" className="btn btn-light-blue" disabled={usersPage <= 1} onClick={() => setUsersPage((p) => p - 1)}>Previous</button>
-                <span>Page {usersPage} of {usersTotalPages} ({usersTotal} total)</span>
-                <button type="button" className="btn btn-light-blue" disabled={usersPage >= usersTotalPages} onClick={() => setUsersPage((p) => p + 1)}>Next</button>
-              </div>
+              <PaginationBar>
+                <div className="pagination">
+                  <button type="button" className="admin-btn-secondary" disabled={usersPage <= 1} onClick={() => setUsersPage((p) => p - 1)}>Previous</button>
+                  <span>Page {usersPage} of {usersTotalPages} ({usersTotal} total)</span>
+                  <button type="button" className="admin-btn-secondary" disabled={usersPage >= usersTotalPages} onClick={() => setUsersPage((p) => p + 1)}>Next</button>
+                </div>
+              </PaginationBar>
             </div>
+            {addUserSlideOpen && (
+              <>
+                <div className="admin-slide-over-overlay" onClick={() => setAddUserSlideOpen(false)} aria-hidden />
+                <div className="admin-slide-over" role="dialog" aria-labelledby="admin-add-user-title">
+                  <div className="admin-slide-over-header">
+                    <h2 id="admin-add-user-title" className="admin-slide-over-title">Add User</h2>
+                    <button type="button" className="admin-slide-over-close" onClick={() => setAddUserSlideOpen(false)} aria-label="Close">×</button>
+                  </div>
+                  <form className="admin-slide-over-body" onSubmit={handleAddUser}>
+                    <div className="form-group">
+                      <label htmlFor="new-user-name">Name</label>
+                      <input id="new-user-name" type="text" placeholder="Full name" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="new-user-phone">Phone</label>
+                      <input id="new-user-phone" type="text" placeholder="Phone number" value={newUserPhone} onChange={(e) => setNewUserPhone(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="new-user-role">Role</label>
+                      <select id="new-user-role" value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}>
+                        <option value="USER">User</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="admin-btn-primary">Add User</button>
+                  </form>
+                </div>
+              </>
+            )}
           </>
         ) : tab === 'prompts' ? (
-          <div className="card admin-content-card">
+          <div className="admin-content-card" style={{ padding: 'var(--space-4)' }}>
             {prompts.length === 0 ? (
               <p>No prompts.</p>
             ) : (
@@ -382,15 +385,17 @@ export function Admin() {
                 ))}
               </div>
             )}
-            <div className="pagination">
-              <button type="button" className="btn btn-light-blue" disabled={promptsPage <= 1} onClick={() => setPromptsPage((p) => p - 1)}>Previous</button>
-              <span>Page {promptsPage} of {promptsTotalPages} ({promptsTotal} total)</span>
-              <button type="button" className="btn btn-light-blue" disabled={promptsPage >= promptsTotalPages} onClick={() => setPromptsPage((p) => p + 1)}>Next</button>
-            </div>
+            <PaginationBar>
+              <div className="pagination">
+                <button type="button" className="admin-btn-secondary" disabled={promptsPage <= 1} onClick={() => setPromptsPage((p) => p - 1)}>Previous</button>
+                <span>Page {promptsPage} of {promptsTotalPages} ({promptsTotal} total)</span>
+                <button type="button" className="admin-btn-secondary" disabled={promptsPage >= promptsTotalPages} onClick={() => setPromptsPage((p) => p + 1)}>Next</button>
+              </div>
+            </PaginationBar>
           </div>
         ) : (
           <>
-            <form className="admin-add-form admin-add-form--compact card" onSubmit={handleAddCategory}>
+            <form className="admin-add-form admin-add-form--compact admin-add-category-form admin-content-card" style={{ padding: 'var(--space-4)' }} onSubmit={handleAddCategory}>
               <div className="form-group">
                 <label htmlFor="new-category-name">Category name</label>
                 <input
@@ -402,13 +407,13 @@ export function Admin() {
                   className="input"
                 />
               </div>
-              <button type="submit" className="btn btn-primary">Add category</button>
+              <button type="submit" className="admin-btn-primary">Add category</button>
             </form>
             <div className="admin-category-list">
               {categories.length === 0 ? (
                 <p style={{ color: 'var(--gray-500)', margin: 0 }}>No categories yet. Add one above.</p>
               ) : (
-                categories.map((cat) => (
+                categoriesOnPage.map((cat) => (
                   <div key={cat.id} className="admin-category-card">
                 <div className="admin-category-header">
                   {editingCategoryId === cat.id ? (
@@ -421,14 +426,14 @@ export function Admin() {
                         style={{ flex: 1, minWidth: 120 }}
                         autoFocus
                       />
-                      <button type="button" className="btn btn-primary" onClick={() => handleUpdateCategory(cat.id)}>Save</button>
-                      <button type="button" className="btn btn-light-blue" onClick={() => { setEditingCategoryId(null); setEditingCategoryName(''); }}>Cancel</button>
+                      <button type="button" className="admin-btn-primary" onClick={() => handleUpdateCategory(cat.id)}>Save</button>
+                      <button type="button" className="admin-btn-secondary" onClick={() => { setEditingCategoryId(null); setEditingCategoryName(''); }}>Cancel</button>
                     </>
                   ) : (
                     <>
                       <span className="admin-category-name">{cat.name}</span>
-                      <button type="button" className="btn btn-light-blue" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}>Edit</button>
-                      <button type="button" className="btn btn-light-blue" onClick={() => handleDeleteCategory(cat.id)}>Delete</button>
+                      <button type="button" className="admin-icon-btn" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} title="Edit" aria-label="Edit"><IconPencil /></button>
+                      <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteCategory(cat.id)} title="Delete" aria-label="Delete"><IconTrash /></button>
                     </>
                   )}
                 </div>
@@ -442,7 +447,7 @@ export function Admin() {
                       className="input"
                       style={{ width: 180 }}
                     />
-                    <button type="button" className="btn btn-primary" onClick={() => handleAddSubCategory(cat.id)}>Add sub-category</button>
+                    <button type="button" className="admin-btn-primary" onClick={() => handleAddSubCategory(cat.id)}>Add sub-category</button>
                   </div>
                   {cat.subCategories && cat.subCategories.length > 0 ? (
                     <ul className="admin-sub-list">
@@ -458,14 +463,14 @@ export function Admin() {
                                 style={{ width: 160 }}
                                 autoFocus
                               />
-                              <button type="button" className="btn btn-primary" onClick={() => handleUpdateSubCategory(sub.id)}>Save</button>
-                              <button type="button" className="btn btn-light-blue" onClick={() => { setEditingSubCategoryId(null); setEditingSubCategoryName(''); }}>Cancel</button>
+                              <button type="button" className="admin-btn-primary" onClick={() => handleUpdateSubCategory(sub.id)}>Save</button>
+                              <button type="button" className="admin-btn-secondary" onClick={() => { setEditingSubCategoryId(null); setEditingSubCategoryName(''); }}>Cancel</button>
                             </>
                           ) : (
                             <>
                               <span>{sub.name}</span>
-                              <button type="button" className="btn btn-light-blue" style={{ fontSize: 'var(--text-sm)' }} onClick={() => { setEditingSubCategoryId(sub.id); setEditingSubCategoryName(sub.name); }}>Edit</button>
-                              <button type="button" className="btn btn-light-blue" style={{ fontSize: 'var(--text-sm)' }} onClick={() => handleDeleteSubCategory(sub.id)}>Delete</button>
+                              <button type="button" className="admin-icon-btn" onClick={() => { setEditingSubCategoryId(sub.id); setEditingSubCategoryName(sub.name); }} title="Edit" aria-label="Edit"><IconPencil /></button>
+                              <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteSubCategory(sub.id)} title="Delete" aria-label="Delete"><IconTrash /></button>
                             </>
                           )}
                         </li>
@@ -479,6 +484,27 @@ export function Admin() {
                 ))
               )}
             </div>
+            <PaginationBar className="admin-categories-pagination">
+              <div className="pagination">
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  disabled={categoriesPage <= 1}
+                  onClick={() => setCategoriesPage((p) => p - 1)}
+                >
+                  Previous
+                </button>
+                <span>Page {categoriesPage} of {categoriesTotalPages} ({categories.length} total)</span>
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  disabled={categoriesPage >= categoriesTotalPages}
+                  onClick={() => setCategoriesPage((p) => p + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            </PaginationBar>
           </>
         )}
       </div>
