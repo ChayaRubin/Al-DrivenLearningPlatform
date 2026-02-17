@@ -3,9 +3,11 @@ import axios from 'axios';
 const BACKEND_URL = 'https://al-driven-learning-platform-s87z.vercel.app';
 
 function getApiBase(): string {
+  if (typeof window === 'undefined') return '/api';
   const fromEnv = import.meta.env.VITE_API_URL;
   if (fromEnv && typeof fromEnv === 'string' && fromEnv.trim()) return fromEnv.trim();
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) return BACKEND_URL;
+  const host = window.location.hostname;
+  if (host.includes('vercel.app') && !host.includes('s87z')) return BACKEND_URL;
   return '/api';
 }
 
