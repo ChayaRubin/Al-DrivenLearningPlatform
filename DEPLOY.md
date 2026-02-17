@@ -1,103 +1,83 @@
-# Deploying Practic (frontend + backend)
+# Deploy your app for free (Vercel + Neon)
 
-Use **Render** for the backend + database and **Vercel** for the frontend. Both have free tiers.
+You can host this project for free using **Vercel** (frontend + backend) and **Neon** (PostgreSQL). Vercel’s free tier allows many projects, so you can use it even if you already have something on Render.
 
----
+## What you’ll set up
 
-## Part 1: Backend + database on Render
-
-1. **Sign up** at [render.com](https://render.com) (GitHub login is easiest).
-
-2. **Create a PostgreSQL database**
-   - Dashboard → **New +** → **PostgreSQL**.
-   - Name it (e.g. `practic-db`).
-   - Region: pick one close to you.
-   - Create. Copy the **Internal Database URL** (you’ll use it in the next step).
-
-3. **Create a Web Service for the backend**
-   - **New +** → **Web Service**.
-   - Connect your GitHub repo and select the **Practic** repo.
-   - Configure:
-     - **Name:** `practic-api` (or any name).
-     - **Root Directory:** `backend`.
-     - **Runtime:** Node.
-     - **Build command:** `npm install && npx prisma generate && npm run build`
-     - **Start command:** `npx prisma migrate deploy && npm start`
-   - **Environment variables** (Add all of these):
-
-     | Key             | Value |
-     |-----------------|--------|
-     | `NODE_ENV`      | `production` |
-     | `DATABASE_URL`  | *(paste the Internal Database URL from step 2)* |
-     | `JWT_SECRET`    | *(generate a long random string, e.g. use [randomkeygen](https://randomkeygen.com/))* |
-     | `JWT_EXPIRES_IN`| `7d` |
-     | `OPENAI_API_KEY`| *(your OpenAI API key if you use AI features)* |
-
-   - After you have your frontend URL (from Part 2), add:
-     | Key           | Value |
-     |---------------|--------|
-     | `CORS_ORIGIN` | `https://your-app.vercel.app` *(your real Vercel URL)* |
-
-   - Click **Create Web Service**. Wait for the first deploy to finish.
-
-4. **Get your backend URL**
-   - On the service page you’ll see something like: `https://practic-api.onrender.com`. Copy it — you need it for the frontend.
+1. **Neon** – free PostgreSQL database  
+2. **Vercel – Backend** – one project for the API  
+3. **Vercel – Frontend** – one project for the React app  
 
 ---
 
-## Part 2: Frontend on Vercel
+## 1. Database (Neon)
 
-1. **Sign up** at [vercel.com](https://vercel.com) and connect your GitHub account.
+1. Go to [neon.tech](https://neon.tech) and sign up (free).
+2. Create a new project and pick a region close to you.
+3. In the dashboard, open the **Connection string** (or “Connection details”). Copy the **connection string** (e.g. `postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`). This is your `DATABASE_URL`.
+4. Run migrations and seed **from your machine** (one time), with `DATABASE_URL` set:
 
-2. **Import the project**
-   - **Add New** → **Project** → select your **Practic** repo.
+   ```bash
+   cd backend
+   set DATABASE_URL=your_neon_connection_string_here
+   npx prisma migrate deploy
+   npx prisma db seed
+   ```
 
-3. **Configure the frontend**
-   - **Root Directory:** click **Edit**, set to `frontend`.
-   - **Framework Preset:** Vite (should be auto-detected).
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-   - **Environment variable:**
-     - Name: `VITE_API_URL`
-     - Value: `https://practic-api.onrender.com` *(use your real Render URL from Part 1)*
-   - Click **Deploy**.
+   On macOS/Linux use `export DATABASE_URL=...` instead of `set`.
 
-4. **Get your frontend URL**
-   - When the deploy finishes, Vercel gives you a URL like `https://practic-xxx.vercel.app`. Copy it.
-
-5. **Allow that URL in the backend (CORS)**
-   - In Render: open your **practic-api** Web Service → **Environment**.
-   - Add (or update):
-     - `CORS_ORIGIN` = `https://practic-xxx.vercel.app` *(your real Vercel URL)*
-   - Save. Render will redeploy; wait for it to finish.
+Keep this `DATABASE_URL` for the next step.
 
 ---
 
-## Summary
+## 2. Backend on Vercel
 
-| What        | Where   | URL you get |
-|------------|---------|-------------|
-| Backend + DB | Render | `https://your-api.onrender.com` |
-| Frontend   | Vercel  | `https://your-app.vercel.app` |
+1. Go to [vercel.com](https://vercel.com) and sign in (e.g. with GitHub).
+2. Click **Add New** → **Project** and import your Git repo (this Practic repo).
+3. **Important:** set **Root Directory** to `backend` (so Vercel only builds the API).
+4. Leave **Framework Preset** as “Other” (or “Vercel” if you see it). Build and output are auto-detected.
+5. Add **Environment Variables** in the Vercel project:
 
-- **Frontend** uses `VITE_API_URL` so all API calls go to your Render backend.
-- **Backend** uses `CORS_ORIGIN` so only your Vercel site can call the API.
+   | Name           | Value                                                                 |
+   |----------------|-----------------------------------------------------------------------|
+   | `DATABASE_URL` | Your Neon connection string from step 1                               |
+   | `JWT_SECRET`   | A long random string (e.g. generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
+   | `CORS_ORIGIN`  | Leave empty for now; set after you deploy the frontend (see below)    |
+   | `OPENAI_API_KEY` | Your OpenAI API key (if the app uses it)                          |
 
----
-
-## Optional: run database seed on Render
-
-If you have a seed script and want to run it once on production:
-
-- In Render, open your Web Service → **Shell** (or use a one-off job if available).
-- Run: `npx prisma db seed`
-
-Or add a **Background Worker** on Render that runs the seed once, then you can delete the worker.
+6. Deploy. When it’s done, note the backend URL, e.g. `https://mini-learning-platform-backend-xxx.vercel.app`.
 
 ---
 
-## Troubleshooting
+## 3. Frontend on Vercel
 
-- **Frontend can’t reach API:** Check `VITE_API_URL` on Vercel and that the backend URL is correct. Rebuild the frontend after changing env vars.
-- **CORS errors:** Make sure `CORS_ORIGIN` on Render exactly matches your Vercel URL (including `https://`, no trailing slash).
-- **Database errors:** Ensure `DATABASE_URL` on Render is the **Internal** URL if the DB and Web Service are in the same account (Render recommends internal for that).
+1. In Vercel, click **Add New** → **Project** again and import the **same** Git repo.
+2. Set **Root Directory** to `frontend`.
+3. Add one **Environment Variable**:
+
+   | Name            | Value                    |
+   |-----------------|--------------------------|
+   | `VITE_API_URL`  | Your backend URL from step 2 (e.g. `https://mini-learning-platform-backend-xxx.vercel.app`) |
+
+   No trailing slash.
+
+4. Deploy. You’ll get a URL like `https://practic-frontend-xxx.vercel.app`.
+
+---
+
+## 4. Enable CORS (backend)
+
+So the browser can call your API from the frontend URL:
+
+1. Open your **backend** project on Vercel → **Settings** → **Environment Variables**.
+2. Set **CORS_ORIGIN** to your **frontend** URL, e.g. `https://practic-frontend-xxx.vercel.app`.
+3. Redeploy the backend (e.g. **Deployments** → … → **Redeploy**).
+
+---
+
+## 5. Done
+
+- **Frontend:** open your frontend Vercel URL (e.g. `https://practic-frontend-xxx.vercel.app`).  
+- **API:** your backend URL (e.g. `https://mini-learning-platform-backend-xxx.vercel.app/health`) should return `{"status":"ok"}`.
+
+All of this stays within free tiers: Vercel (many projects) + Neon (free PostgreSQL).

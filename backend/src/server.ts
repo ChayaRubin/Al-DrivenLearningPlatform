@@ -26,6 +26,11 @@ app.get('/health', (_req, res) => {
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`Server running on http://localhost:${config.port}`);
-});
+// On Vercel, the app is used as serverless handler; don't call listen.
+if (process.env.VERCEL !== '1') {
+  app.listen(config.port, () => {
+    console.log(`Server running on http://localhost:${config.port}`);
+  });
+}
+
+export default app;
