@@ -133,6 +133,7 @@ export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
+console.log("API BASE URL:", api.defaults.baseURL);
 
 /* ===========================
    Request Interceptor
