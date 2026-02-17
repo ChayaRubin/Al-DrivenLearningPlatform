@@ -20,6 +20,9 @@ app.use('/categories', categoryRoutes);
 app.use('/prompts', promptRoutes);
 app.use('/admin', adminRoutes);
 
+app.get('/', (_req, res) => {
+  res.json({ message: 'API is running', health: '/health' });
+});
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });

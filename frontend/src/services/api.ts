@@ -29,6 +29,19 @@ api.interceptors.response.use(
   }
 );
 
+/** Always return a string from an API error so we never render an object (React #31). */
+export function getErrorMessage(err: unknown, fallback = 'Something went wrong'): string {
+  if (typeof err === 'string') return err;
+  const obj = (err as { response?: { data?: unknown } })?.response?.data;
+  if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+    const msg = (obj as { error?: string; message?: string }).error ?? (obj as { message?: string }).message;
+    if (typeof msg === 'string') return msg;
+  }
+  const msg = (err as Error)?.message;
+  if (typeof msg === 'string') return msg;
+  return fallback;
+}
+
 export type User = { id: string; email: string; name?: string | null; phone?: string | null; role: string; createdAt: string };
 export type Category = { id: string; name: string; subCategories: SubCategory[] };
 export type SubCategory = { id: string; name: string; categoryId: string };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminApi } from '../services/api';
+import { adminApi, getErrorMessage } from '../services/api';
 import type { User, PromptItem, Category, SubCategory } from '../services/api';
 import { PaginationBar } from '../components/PaginationBar';
 
@@ -112,8 +112,7 @@ export function Admin() {
       setAddUserSlideOpen(false);
       refreshUsers();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to add user');
+      setError(getErrorMessage(err, 'Failed to add user'));
     }
   };
 
@@ -132,8 +131,7 @@ export function Admin() {
       setEditingUserRole('USER');
       refreshUsers();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to update user');
+      setError(getErrorMessage(err, 'Failed to update user'));
     }
   };
 
@@ -144,8 +142,7 @@ export function Admin() {
       await adminApi.deleteUser(id);
       refreshUsers();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to delete user');
+      setError(getErrorMessage(err, 'Failed to delete user'));
     }
   };
 
@@ -158,8 +155,7 @@ export function Admin() {
       setNewCategoryName('');
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to add category');
+      setError(getErrorMessage(err, 'Failed to add category'));
     }
   };
 
@@ -172,8 +168,7 @@ export function Admin() {
       setEditingCategoryName('');
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to update category');
+      setError(getErrorMessage(err, 'Failed to update category'));
     }
   };
 
@@ -184,8 +179,7 @@ export function Admin() {
       await adminApi.deleteCategory(id);
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to delete category');
+      setError(getErrorMessage(err, 'Failed to delete category'));
     }
   };
 
@@ -198,8 +192,7 @@ export function Admin() {
       setNewSubCategoryName((prev) => ({ ...prev, [categoryId]: '' }));
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to add sub-category');
+      setError(getErrorMessage(err, 'Failed to add sub-category'));
     }
   };
 
@@ -212,8 +205,7 @@ export function Admin() {
       setEditingSubCategoryName('');
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to update sub-category');
+      setError(getErrorMessage(err, 'Failed to update sub-category'));
     }
   };
 
@@ -224,8 +216,7 @@ export function Admin() {
       await adminApi.deleteSubCategory(id);
       refreshCategories();
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to delete sub-category');
+      setError(getErrorMessage(err, 'Failed to delete sub-category'));
     }
   };
 
@@ -254,7 +245,7 @@ export function Admin() {
         </div>
       </header>
       <div className="admin-body">
-        {error && <p className="error-msg">{error}</p>}
+        {error && <p className="error-msg">{String(error)}</p>}
         {loading ? (
           <p>Loading...</p>
         ) : tab === 'users' ? (
