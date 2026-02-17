@@ -10,11 +10,12 @@ function getApiBase(): string {
 }
 
 export const api = axios.create({
-  baseURL: getApiBase(),
+  baseURL: '', // set per-request in interceptor so build-time Node doesn't see window
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBase();
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
