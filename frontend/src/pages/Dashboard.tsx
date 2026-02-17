@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { categoriesApi, promptsApi } from '../services/api';
+import { categoriesApi, promptsApi, getErrorMessage } from '../services/api';
 import { PaginationBar } from '../components/PaginationBar';
 
 type Cat = { id: string; name: string; subCategories: { id: string; name: string }[] };
@@ -75,8 +75,7 @@ export function Dashboard() {
       const { data } = await promptsApi.create(categoryId, subCategoryId, prompt.trim());
       setResult(data.data);
     } catch (err: unknown) {
-      const res = err as { response?: { data?: { error?: string } } };
-      setError(res?.response?.data?.error || 'Failed to generate lesson');
+      setError(getErrorMessage(err, 'Failed to generate lesson'));
     } finally {
       setLoading(false);
     }
@@ -188,7 +187,7 @@ export function Dashboard() {
                     required
                   />
                 </div>
-                {error && <p className="error-msg">{error}</p>}
+                {error && <p className="error-msg">{String(error)}</p>}
                 <button type="submit" className="btn btn-primary prompt-submit-btn" disabled={loading}>
                   {loading ? 'Generating lesson...' : 'Generate lesson'}
                 </button>

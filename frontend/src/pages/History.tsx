@@ -32,7 +32,7 @@ export function History() {
       <div className="header">
         <h1 className="page-title">Learning History</h1>
       </div>
-      {error && <p className="error-msg">{error}</p>}
+      {error && <p className="error-msg">{String(error)}</p>}
       {loading ? (
         <p>Loading...</p>
       ) : items.length === 0 ? (

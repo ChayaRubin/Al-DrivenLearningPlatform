@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authApi } from '../services/api';
+import { authApi, getErrorMessage } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 
@@ -41,10 +41,10 @@ export function Login() {
       const { data } = await authApi.login(name.trim(), phone);
       setToken(data.data.token);
       setUser(data.data.user);
-      navigate('/dashboard');
+      setLoading(false);
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Login failed');
+      setError(getErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export function Login() {
           />
           {phoneError && <p id="login-phone-error" className="error-msg form-field-error">{phoneError}</p>}
         </div>
-        {error && <p className="error-msg">{error}</p>}
+        {error && <p className="error-msg">{String(error)}</p>}
         <button type="submit" className="btn btn-primary btn-block auth-submit" disabled={loading}>
           {loading ? 'Signing in...' : 'Log in'}
         </button>
