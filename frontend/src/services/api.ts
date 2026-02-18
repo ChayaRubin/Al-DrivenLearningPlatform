@@ -122,19 +122,22 @@
 import axios from 'axios';
 
 /**
- * IMPORTANT:
- * Backend is a separate Vercel project.
- * Vercel exposes serverless functions under /api.
- * So the base URL MUST include /api.
+ * API base URL:
+ * - Set VITE_API_URL in your deployment (e.g. in Vercel env vars) to your backend URL.
+ * - Frontend (e.g. bmvv) and backend (e.g. s87z) are different Vercel projects;
+ *   the frontend must call the backend URL, not the frontend URL, or you get 405 + HTML.
  */
-const BASE_URL = 'https://al-driven-learning-platform-s87z.vercel.app/api';
-console.log("FORCE REBUILD - BASE:", BASE_URL);
+function getApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_URL;
+  if (typeof fromEnv === 'string' && fromEnv.trim()) return fromEnv.trim();
+  if (import.meta.env.DEV) return '/api'; // Vite proxy forwards /api to backend
+  return 'https://al-driven-learning-platform-s87z.vercel.app';
+}
 
 export const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: getApiBase(),
   headers: { 'Content-Type': 'application/json' },
 });
-console.log("API BASE URL:", api.defaults.baseURL);
 
 /* ===========================
    Request Interceptor
