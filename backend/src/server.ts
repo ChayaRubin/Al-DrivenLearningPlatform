@@ -11,11 +11,22 @@ import { adminRoutes } from './routes/admin.routes';
 
 const app = express();
 
+// CORS: allow production URL, all Vercel deployments (*.vercel.app), and in dev allow any origin
+function allowedOrigin(origin: string | undefined, cb: (err: Error | null, allow?: boolean | string) => void) {
+  if (!origin) return cb(null, true);
+  if (config.corsOrigin && origin === config.corsOrigin) return cb(null, origin);
+  if (origin.endsWith('.vercel.app')) return cb(null, origin);
+  if (config.nodeEnv === 'development') return cb(null, origin);
+  cb(null, false);
+}
+
 app.use(
   cors({
-    origin: config.corsOrigin || true,
+    origin: allowedOrigin,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 204,
   })
 );
 app.use(express.json());
