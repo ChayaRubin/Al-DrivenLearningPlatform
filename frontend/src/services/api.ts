@@ -1,11 +1,14 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// In dev always use local backend via Vite proxy (no CORS). In production use env or fallback.
+const API_BASE = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || '/api');
 
 export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
+
+console.log("API_BASE:", API_BASE);
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
