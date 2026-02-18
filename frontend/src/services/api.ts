@@ -131,7 +131,7 @@ function getApiBase(): string {
   const fromEnv = import.meta.env.VITE_API_URL;
   if (typeof fromEnv === 'string' && fromEnv.trim()) return fromEnv.trim();
   if (import.meta.env.DEV) return '/api'; // Vite proxy forwards /api to backend
-  return 'https://al-driven-learning-platform-s87z.vercel.app';
+  return 'https://al-driven-learning-platform-s87z.vercel.app/api';
 }
 
 export const api = axios.create({
