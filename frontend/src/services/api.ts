@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-const API_BASE =
-  import.meta.env.MODE === 'development'
-    ? '/api'
-    : import.meta.env.VITE_API_URL ?? 'MISSING_ENV';
-    
+const API_BASE ="https://ai-driven-learning-backend.onrender.com"
+
 console.log(import.meta.env);
 
 console.log("API_BASE =", API_BASE);
