@@ -8,8 +8,7 @@ import { History } from './pages/History';
 import { Admin } from './pages/Admin';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  // No login required: allow access to app without token
   return <>{children}</>;
 }
 

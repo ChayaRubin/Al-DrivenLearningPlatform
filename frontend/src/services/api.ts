@@ -5,7 +5,9 @@ const API_BASE =
   import.meta.env.MODE === 'development'
     ? '/api'
     : import.meta.env.VITE_API_URL;
-
+    
+console.log(import.meta.env);
+console.log(import.meta.env);
 
 console.log("API_BASE =", API_BASE);
 console.log("ENV =", import.meta.env);
@@ -32,7 +34,7 @@ api.interceptors.response.use(
       if (!isAuthRequest) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Don't redirect to login – allow using the app without logging in
       }
     }
     return Promise.reject(err);

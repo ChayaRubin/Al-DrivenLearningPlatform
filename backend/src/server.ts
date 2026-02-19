@@ -25,7 +25,7 @@ function getAllowedOrigin(origin: string | undefined): string | null {
   if (config.nodeEnv === 'development') return origin;
   return null;
 }
-
+console.log("CORS_ORIGIN =", config.corsOrigin);
 // Handle preflight (OPTIONS) first so CORS headers are always set on Vercel serverless
 app.use((req, res, next) => {
   if (req.method !== 'OPTIONS') return next();

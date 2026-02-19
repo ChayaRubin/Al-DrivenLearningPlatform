@@ -39,6 +39,7 @@ export function Login() {
     setLoading(true);
     try {
       const { data } = await authApi.login(name.trim(), phone);
+      console.log(data);
       setToken(data.data.token);
       setUser(data.data.user);
       setLoading(false);
