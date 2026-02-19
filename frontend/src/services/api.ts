@@ -4,6 +4,8 @@ const API_BASE =
   import.meta.env.MODE === 'development'
     ? '/api'
     : import.meta.env.VITE_API_URL ?? 'MISSING_ENV';
+    
+console.log(import.meta.env);
 
 console.log("API_BASE =", API_BASE);
 
