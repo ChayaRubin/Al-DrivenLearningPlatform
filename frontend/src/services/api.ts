@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_BASE ="https://ai-driven-learning-backend.onrender.com"
+const API_BASE ='https://ai-driven-learning-backend.onrender.com'
 
 console.log(import.meta.env);
 
-console.log("API_BASEEEEEEEE =", API_BASE);
+console.log("API_BASEEEEEEEE =", API_BASE)
 
 export const api = axios.create({
   baseURL: API_BASE,
