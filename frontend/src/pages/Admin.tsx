@@ -1,9 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { adminApi } from '../services/api';
 import type { User, PromptItem, Category, SubCategory } from '../services/api';
 import { PaginationBar } from '../components/PaginationBar';
+import { getCategoryImageUrl } from '../utils/categoryImage';
 
-const LIMIT = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const SEARCH_DEBOUNCE_MS = 400;
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  const ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (ref.current) clearTimeout(ref.current);
+    ref.current = setTimeout(() => setDebounced(value), delayMs);
+    return () => {
+      if (ref.current) clearTimeout(ref.current);
+    };
+  }, [value, delayMs]);
+  return debounced;
+}
 
 type Tab = 'users' | 'prompts' | 'categories';
 
@@ -14,13 +29,24 @@ export function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit, setUsersLimit] = useState(10);
+  const [usersSearch, setUsersSearch] = useState('');
+  const [usersRole, setUsersRole] = useState<string>('');
   const [prompts, setPrompts] = useState<AdminPrompt[]>([]);
   const [promptsTotal, setPromptsTotal] = useState(0);
   const [promptsPage, setPromptsPage] = useState(1);
+  const [promptsLimit, setPromptsLimit] = useState(10);
+  const [promptsSearch, setPromptsSearch] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesPage, setCategoriesPage] = useState(1);
+  const [categoriesLimit, setCategoriesLimit] = useState(10);
+  const [categoriesSearch, setCategoriesSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const usersSearchDebounced = useDebouncedValue(usersSearch, SEARCH_DEBOUNCE_MS);
+  const promptsSearchDebounced = useDebouncedValue(promptsSearch, SEARCH_DEBOUNCE_MS);
+  const categoriesSearchDebounced = useDebouncedValue(categoriesSearch, SEARCH_DEBOUNCE_MS);
 
   // Users: add form in slide-over & edit
   const [addUserSlideOpen, setAddUserSlideOpen] = useState(false);
@@ -39,32 +65,45 @@ export function Admin() {
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [editingSubCategoryId, setEditingSubCategoryId] = useState<string | null>(null);
   const [editingSubCategoryName, setEditingSubCategoryName] = useState('');
+  const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
+  const [addingWithImage, setAddingWithImage] = useState<'idle' | 'generate' | 'upload'>('idle');
 
   useEffect(() => {
     if (tab !== 'users') return;
     setLoading(true);
     adminApi
-      .users(usersPage, LIMIT)
+      .users(usersPage, usersLimit, {
+        search: usersSearchDebounced.trim() || undefined,
+        role: usersRole || undefined,
+      })
       .then((r) => {
         setUsers(r.data.data);
         setUsersTotal(r.data.total);
       })
       .catch(() => setError('Failed to load users'))
       .finally(() => setLoading(false));
-  }, [tab, usersPage]);
+  }, [tab, usersPage, usersLimit, usersSearchDebounced, usersRole]);
+
+  useEffect(() => {
+    if (tab === 'users') setUsersPage(1);
+  }, [usersSearchDebounced, usersRole, usersLimit, tab]);
 
   useEffect(() => {
     if (tab !== 'prompts') return;
     setLoading(true);
     adminApi
-      .prompts(promptsPage, LIMIT)
+      .prompts(promptsPage, promptsLimit, promptsSearchDebounced.trim() || undefined)
       .then((r) => {
         setPrompts(r.data.data);
         setPromptsTotal(r.data.total);
       })
       .catch(() => setError('Failed to load prompts'))
       .finally(() => setLoading(false));
-  }, [tab, promptsPage]);
+  }, [tab, promptsPage, promptsLimit, promptsSearchDebounced]);
+
+  useEffect(() => {
+    if (tab === 'prompts') setPromptsPage(1);
+  }, [promptsSearchDebounced, promptsLimit, tab]);
 
   useEffect(() => {
     if (tab !== 'categories') return;
@@ -76,29 +115,41 @@ export function Admin() {
       .finally(() => setLoading(false));
   }, [tab]);
 
+  const categoriesFiltered = categoriesSearchDebounced.trim()
+    ? categories.filter(
+        (c) =>
+          c.name.toLowerCase().includes(categoriesSearchDebounced.trim().toLowerCase())
+      )
+    : categories;
+  const categoriesTotalPages = Math.ceil(categoriesFiltered.length / categoriesLimit) || 1;
+  const categoriesOnPage = categoriesFiltered.slice(
+    (categoriesPage - 1) * categoriesLimit,
+    categoriesPage * categoriesLimit
+  );
+
   useEffect(() => {
-    const maxPage = Math.ceil(categories.length / LIMIT) || 1;
-    setCategoriesPage((p) => Math.min(p, maxPage));
-  }, [categories.length]);
+    if (tab === 'categories') {
+      const maxPage = Math.ceil(categoriesFiltered.length / categoriesLimit) || 1;
+      setCategoriesPage((p) => Math.min(p, maxPage));
+    }
+  }, [tab, categoriesFiltered.length, categoriesLimit]);
 
   const refreshUsers = () => {
-    adminApi.users(usersPage, LIMIT).then((r) => {
-      setUsers(r.data.data);
-      setUsersTotal(r.data.total);
-    }).catch(() => setError('Failed to load users'));
+    adminApi
+      .users(usersPage, usersLimit, { search: usersSearchDebounced.trim() || undefined, role: usersRole || undefined })
+      .then((r) => {
+        setUsers(r.data.data);
+        setUsersTotal(r.data.total);
+      })
+      .catch(() => setError('Failed to load users'));
   };
 
   const refreshCategories = () => {
     adminApi.categories().then((r) => setCategories(r.data.data)).catch(() => setError('Failed to load categories'));
   };
 
-  const usersTotalPages = Math.ceil(usersTotal / LIMIT) || 1;
-  const promptsTotalPages = Math.ceil(promptsTotal / LIMIT) || 1;
-  const categoriesTotalPages = Math.ceil(categories.length / LIMIT) || 1;
-  const categoriesOnPage = categories.slice(
-    (categoriesPage - 1) * LIMIT,
-    categoriesPage * LIMIT
-  );
+  const usersTotalPages = Math.ceil(usersTotal / usersLimit) || 1;
+  const promptsTotalPages = Math.ceil(promptsTotal / promptsLimit) || 1;
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +214,56 @@ export function Admin() {
     }
   };
 
+  const handleAddCategoryAndGenerateImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    setError('');
+    setAddingWithImage('generate');
+    try {
+      const { data } = await adminApi.createCategory(newCategoryName.trim());
+      await adminApi.generateCategoryImage(data.id);
+      setNewCategoryName('');
+      refreshCategories();
+    } catch (err: unknown) {
+      const res = err as { response?: { data?: { error?: string } }; code?: string };
+      const msg = res?.response?.data?.error;
+      if (msg) setError(msg);
+      else if (res?.code === 'ECONNABORTED' || !res?.response)
+        setError('Request timed out or connection failed. Try again.');
+      else setError('Failed to add category or generate image');
+    } finally {
+      setAddingWithImage('idle');
+    }
+  };
+
+  const handleAddCategoryWithFile = async (file: File) => {
+    if (!newCategoryName.trim()) {
+      setError('Enter a category name first');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file (JPEG, PNG, GIF, WebP)');
+      return;
+    }
+    setError('');
+    setAddingWithImage('upload');
+    try {
+      const { data } = await adminApi.createCategory(newCategoryName.trim());
+      await adminApi.uploadCategoryImage(data.id, file);
+      setNewCategoryName('');
+      refreshCategories();
+    } catch (err: unknown) {
+      const res = err as { response?: { data?: { error?: string } }; code?: string };
+      const msg = res?.response?.data?.error;
+      if (msg) setError(msg);
+      else if (res?.code === 'ECONNABORTED' || !res?.response)
+        setError('Request timed out or connection failed. Wait a moment and try again (server may be starting). If it still fails, try a smaller image.');
+      else setError('Failed to add category or upload image');
+    } finally {
+      setAddingWithImage('idle');
+    }
+  };
+
   const handleUpdateCategory = async (id: string) => {
     if (!editingCategoryName.trim()) return;
     setError('');
@@ -174,6 +275,43 @@ export function Admin() {
     } catch (err: unknown) {
       const res = err as { response?: { data?: { error?: string } } };
       setError(res?.response?.data?.error || 'Failed to update category');
+    }
+  };
+
+  const handleGenerateCategoryImage = async (id: string) => {
+    setError('');
+    setGeneratingImageId(id);
+    try {
+      await adminApi.generateCategoryImage(id);
+      refreshCategories();
+    } catch (err: unknown) {
+      const res = err as { response?: { data?: { error?: string } }; code?: string };
+      const msg = res?.response?.data?.error;
+      if (msg) setError(msg);
+      else if (res?.code === 'ECONNABORTED' || !res?.response)
+        setError('Request timed out or connection failed. The server may be slow; try again.');
+      else setError('Failed to generate image');
+    } finally {
+      setGeneratingImageId(null);
+    }
+  };
+
+  const handleUploadCategoryImage = async (id: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file (JPEG, PNG, GIF, WebP)');
+      return;
+    }
+    setError('');
+    try {
+      await adminApi.uploadCategoryImage(id, file);
+      refreshCategories();
+    } catch (err: unknown) {
+      const res = err as { response?: { data?: { error?: string } }; code?: string };
+      const msg = res?.response?.data?.error;
+      if (msg) setError(msg);
+      else if (res?.code === 'ECONNABORTED' || !res?.response)
+        setError('Request timed out or connection failed. Wait a moment and try again (server may be starting). If it still fails, try a smaller image.');
+      else setError('Failed to upload image');
     }
   };
 
@@ -255,11 +393,48 @@ export function Admin() {
       </header>
       <div className="admin-body">
         {error && <p className="error-msg">{error}</p>}
-        {loading ? (
-          <p>Loading...</p>
-        ) : tab === 'users' ? (
+        {tab === 'users' ? (
           <>
-            <div className="table-wrap admin-content-card admin-users-table">
+            <div className="admin-filters admin-content-card">
+              <div className="admin-filter-row">
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Search</span>
+                  <input
+                    type="text"
+                    className="input admin-filter-input"
+                    placeholder="Name or phone..."
+                    value={usersSearch}
+                    onChange={(e) => setUsersSearch(e.target.value)}
+                  />
+                </label>
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Role</span>
+                  <select
+                    className="input admin-filter-input admin-filter-select"
+                    value={usersRole}
+                    onChange={(e) => setUsersRole(e.target.value)}
+                  >
+                    <option value="">All</option>
+                    <option value="USER">User</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </label>
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Per page</span>
+                  <select
+                    className="input admin-filter-input admin-filter-select"
+                    value={usersLimit}
+                    onChange={(e) => setUsersLimit(Number(e.target.value))}
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div className={`table-wrap admin-content-card admin-users-table ${loading ? 'admin-table-loading' : ''}`}>
+              {loading && <div className="admin-loading-overlay" aria-hidden><span className="admin-loading-spinner" /> Loading…</div>}
               <table>
                 <thead>
                   <tr>
@@ -365,15 +540,43 @@ export function Admin() {
             )}
           </>
         ) : tab === 'prompts' ? (
-          <div className="admin-content-card" style={{ padding: 'var(--space-4)' }}>
-            {prompts.length === 0 ? (
-              <p>No prompts.</p>
+          <>
+            <div className="admin-filters admin-content-card">
+              <div className="admin-filter-row">
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Search</span>
+                  <input
+                    type="text"
+                    className="input admin-filter-input"
+                    placeholder="Prompt, category, user..."
+                    value={promptsSearch}
+                    onChange={(e) => setPromptsSearch(e.target.value)}
+                  />
+                </label>
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Per page</span>
+                  <select
+                    className="input admin-filter-input admin-filter-select"
+                    value={promptsLimit}
+                    onChange={(e) => setPromptsLimit(Number(e.target.value))}
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div className={`admin-content-card admin-content-card--with-list ${loading ? 'admin-table-loading' : ''}`} style={{ padding: 'var(--space-4)' }}>
+              {loading && <div className="admin-loading-overlay" aria-hidden><span className="admin-loading-spinner" /> Loading…</div>}
+            {prompts.length === 0 && !loading ? (
+              <p className="admin-empty-state">No prompts.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {prompts.map((p) => (
                   <div key={p.id} style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--gray-200)' }}>
                     <div style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-500)', marginBottom: '0.25rem' }}>
-                      {p.user?.email ?? '—'} · {new Date(p.createdAt).toLocaleString()}
+                      {p.user?.name ?? p.user?.phone ?? '—'} · {new Date(p.createdAt).toLocaleString()}
                     </div>
                     <strong>{p.category?.name} / {p.subCategory?.name}</strong>
                     <p style={{ marginTop: '0.25rem' }}>{p.userPrompt}</p>
@@ -393,8 +596,35 @@ export function Admin() {
               </div>
             </PaginationBar>
           </div>
+          </>
         ) : (
           <>
+            <div className="admin-filters admin-content-card">
+              <div className="admin-filter-row">
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Search</span>
+                  <input
+                    type="text"
+                    className="input admin-filter-input"
+                    placeholder="Category name..."
+                    value={categoriesSearch}
+                    onChange={(e) => setCategoriesSearch(e.target.value)}
+                  />
+                </label>
+                <label className="admin-filter-item admin-filter-item--inline">
+                  <span className="admin-filter-label">Per page</span>
+                  <select
+                    className="input admin-filter-input admin-filter-select"
+                    value={categoriesLimit}
+                    onChange={(e) => setCategoriesLimit(Number(e.target.value))}
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
             <form className="admin-add-form admin-add-form--compact admin-add-category-form admin-content-card" style={{ padding: 'var(--space-4)' }} onSubmit={handleAddCategory}>
               <div className="form-group">
                 <label htmlFor="new-category-name">Category name</label>
@@ -407,7 +637,33 @@ export function Admin() {
                   className="input"
                 />
               </div>
-              <button type="submit" className="admin-btn-primary">Add category</button>
+              <div className="admin-add-category-actions">
+                <button type="submit" className="admin-btn-primary" disabled={!newCategoryName.trim()}>
+                  Add category
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  disabled={!newCategoryName.trim() || addingWithImage !== 'idle'}
+                  onClick={handleAddCategoryAndGenerateImage}
+                >
+                  {addingWithImage === 'generate' ? 'Adding…' : 'Add category & generate image'}
+                </button>
+                <label className="admin-btn-secondary" style={{ marginBottom: 0, cursor: 'pointer' }}>
+                  {addingWithImage === 'upload' ? 'Uploading…' : 'Add category & choose image from PC'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    disabled={!newCategoryName.trim() || addingWithImage !== 'idle'}
+                    style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleAddCategoryWithFile(f);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
             </form>
             <div className="admin-category-list">
               {categories.length === 0 ? (
@@ -436,6 +692,37 @@ export function Admin() {
                       <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteCategory(cat.id)} title="Delete" aria-label="Delete"><IconTrash /></button>
                     </>
                   )}
+                </div>
+                <div className="admin-category-image-section">
+                  <div className="admin-category-image-preview-wrap">
+                    <div className="admin-category-image-preview" style={{ backgroundImage: `url(${getCategoryImageUrl(cat)})` }} aria-hidden />
+                    {!cat.imageUrl && (
+                      <span className="admin-category-image-fallback-hint">Default URL</span>
+                    )}
+                  </div>
+                  <div className="admin-category-image-actions">
+                    <button
+                      type="button"
+                      className="admin-btn-secondary"
+                      disabled={generatingImageId === cat.id}
+                      onClick={() => handleGenerateCategoryImage(cat.id)}
+                    >
+                      {generatingImageId === cat.id ? 'Generating…' : 'Generate with AI'}
+                    </button>
+                    <label className="admin-btn-secondary" style={{ marginBottom: 0, cursor: 'pointer' }}>
+                      Choose from PC
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadCategoryImage(cat.id, f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </div>
                 </div>
                 <div className="admin-sub-section">
                   <div className="admin-sub-add-row">
@@ -494,7 +781,7 @@ export function Admin() {
                 >
                   Previous
                 </button>
-                <span>Page {categoriesPage} of {categoriesTotalPages} ({categories.length} total)</span>
+                <span>Page {categoriesPage} of {categoriesTotalPages} ({categoriesFiltered.length} total)</span>
                 <button
                   type="button"
                   className="admin-btn-secondary"

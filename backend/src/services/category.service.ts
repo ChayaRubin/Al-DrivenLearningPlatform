@@ -25,14 +25,24 @@ export async function getSubCategoryById(id: string) {
   return prisma.subCategory.findUnique({ where: { id } });
 }
 
-export async function createCategory(name: string) {
-  return prisma.category.create({ data: { name: name.trim() } });
+export async function createCategory(name: string, imageUrl?: string | null) {
+  return prisma.category.create({
+    data: { name: name.trim(), imageUrl: imageUrl ?? undefined },
+  });
 }
 
-export async function updateCategory(id: string, name: string) {
+export async function updateCategory(id: string, name: string, imageUrl?: string | null) {
   const existing = await prisma.category.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Category not found');
-  return prisma.category.update({ where: { id }, data: { name: name.trim() } });
+  const data: { name: string; imageUrl?: string | null } = { name: name.trim() };
+  if (imageUrl !== undefined) data.imageUrl = imageUrl;
+  return prisma.category.update({ where: { id }, data });
+}
+
+export async function setCategoryImage(id: string, imageUrl: string | null) {
+  const existing = await prisma.category.findUnique({ where: { id } });
+  if (!existing) throw new NotFoundError('Category not found');
+  return prisma.category.update({ where: { id }, data: { imageUrl } });
 }
 
 export async function deleteCategory(id: string) {

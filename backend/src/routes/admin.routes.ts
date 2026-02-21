@@ -13,10 +13,13 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  generateCategoryImage,
+  uploadCategoryImage,
   createSubCategory,
   updateSubCategory,
   deleteSubCategory,
 } from '../controllers/admin.controller';
+import { uploadSingleImage } from '../middlewares/upload.middleware';
 import {
   validateAdminCreateUser,
   validateAdminUpdateUser,
@@ -36,6 +39,8 @@ adminRoutes.get('/categories', listCategoriesAdmin);
 adminRoutes.post('/categories', validateCategoryName, createCategory);
 adminRoutes.patch('/categories/:id', validateCategoryName, updateCategory);
 adminRoutes.delete('/categories/:id', deleteCategory);
+adminRoutes.post('/categories/:id/generate-image', generateCategoryImage);
+adminRoutes.post('/categories/:id/image', uploadSingleImage, uploadCategoryImage);
 
 adminRoutes.post('/categories/:categoryId/subcategories', validateCategoryName, createSubCategory);
 adminRoutes.patch('/subcategories/:id', validateCategoryName, updateSubCategory);

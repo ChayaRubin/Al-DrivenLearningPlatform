@@ -1,22 +1,11 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { categoriesApi, promptsApi } from '../services/api';
 import { PaginationBar } from '../components/PaginationBar';
+import { getCategoryImageUrl } from '../utils/categoryImage';
 
-type Cat = { id: string; name: string; subCategories: { id: string; name: string }[] };
+type Cat = { id: string; name: string; imageUrl?: string | null; subCategories: { id: string; name: string }[] };
 
 const CATEGORIES_PER_PAGE = 9;
-
-const CATEGORY_IMAGES: Record<string, string> = {
-  Programming: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80',
-  Mathematics: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80',
-  Graphics: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&q=80',
-  'DataScience': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80',
-  'Generative AI': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80',
-};
-
-function getCategoryImage(name: string): string {
-  return CATEGORY_IMAGES[name] ?? `https://picsum.photos/seed/${encodeURIComponent(name)}/600/360`;
-}
 
 export function Dashboard() {
   const [categories, setCategories] = useState<Cat[]>([]);
@@ -106,7 +95,7 @@ export function Dashboard() {
                 >
                   <div
                     className="category-card-image"
-                    style={{ backgroundImage: `url(${getCategoryImage(c.name)})` }}
+                    style={{ backgroundImage: `url(${getCategoryImageUrl(c)})` }}
                   />
                   <div className="category-card-body">
                     <span>{c.name}</span>
@@ -148,7 +137,7 @@ export function Dashboard() {
               <div className="lesson-hero-banner">
                 <div
                   className="lesson-hero-icon"
-                  style={{ backgroundImage: `url(${getCategoryImage(selectedCategory.name)})` }}
+                  style={{ backgroundImage: `url(${getCategoryImageUrl(selectedCategory)})` }}
                   aria-hidden
                 />
                 <div className="lesson-hero-text">

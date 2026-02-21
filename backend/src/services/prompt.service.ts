@@ -55,10 +55,27 @@ export async function getHistoryByUserId(userId: string, page = 1, limit = 10) {
   return { data, total, page, limit };
 }
 
-export async function listPrompts(page = 1, limit = 10) {
+export async function listPrompts(
+  page = 1,
+  limit = 10,
+  search?: string
+) {
+  const where = search?.trim()
+    ? {
+        OR: [
+          { userPrompt: { contains: search.trim(), mode: 'insensitive' as const } },
+          { generatedLesson: { contains: search.trim(), mode: 'insensitive' as const } },
+          { category: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+          { subCategory: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+          { user: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+          { user: { phone: { contains: search.trim(), mode: 'insensitive' as const } } },
+        ],
+      }
+    : undefined;
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
     prisma.prompt.findMany({
+      where,
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -68,7 +85,7 @@ export async function listPrompts(page = 1, limit = 10) {
         subCategory: { select: { name: true } },
       },
     }),
-    prisma.prompt.count(),
+    prisma.prompt.count({ where }),
   ]);
   return { data, total, page, limit };
 }

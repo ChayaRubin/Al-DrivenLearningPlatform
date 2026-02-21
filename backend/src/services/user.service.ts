@@ -114,15 +114,31 @@ export async function findById(id: string): Promise<UserResponse | null> {
   return user;
 }
 
-export async function listUsers(skip: number, take: number) {
+export async function listUsers(
+  skip: number,
+  take: number,
+  filters?: { search?: string; role?: string }
+) {
+  const where: { role?: Role; OR?: { name: { contains: string; mode: 'insensitive' }; phone: { contains: string; mode: 'insensitive' } }[] } = {};
+  if (filters?.role && (filters.role === 'USER' || filters.role === 'ADMIN')) {
+    where.role = filters.role as Role;
+  }
+  if (filters?.search?.trim()) {
+    const term = filters.search.trim();
+    where.OR = [
+      { name: { contains: term, mode: 'insensitive' } },
+      { phone: { contains: term, mode: 'insensitive' } },
+    ];
+  }
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where: Object.keys(where).length ? where : undefined,
       skip,
       take,
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, phone: true, role: true, createdAt: true },
     }),
-    prisma.user.count(),
+    prisma.user.count({ where: Object.keys(where).length ? where : undefined }),
   ]);
   return { data: users, total };
 }

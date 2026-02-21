@@ -39,3 +39,28 @@ export async function generateLesson(
     throw new AppError('AI service error', 502);
   }
 }
+
+/** Generate a category image with DALL·E; returns data URL (base64). */
+export async function generateCategoryImage(categoryName: string): Promise<string> {
+  if (!config.openai.apiKey) {
+    throw new AppError('OPENAI_API_KEY is not configured', 500);
+  }
+  try {
+    const response = await openai.images.generate({
+      model: 'dall-e-2',
+      prompt: `Professional, modern illustration for an educational learning category: "${categoryName}". Clean, friendly, suitable for a learning platform. No text in the image.`,
+      n: 1,
+      size: '512x512',
+      response_format: 'b64_json',
+    });
+    const b64 = response.data[0]?.b64_json;
+    if (!b64) throw new AppError('No image data from AI', 502);
+    return `data:image/png;base64,${b64}`;
+  } catch (err: unknown) {
+    const msg =
+      (err as { message?: string })?.message ||
+      (err as { error?: { message?: string } })?.error?.message ||
+      'Unknown error';
+    throw new AppError(`AI image error: ${msg}`, 502);
+  }
+}
