@@ -26,6 +26,10 @@ app.get('/health', (_req, res) => {
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`Server running on http://localhost:${config.port}`);
-});
+if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
+  app.listen(config.port, () => {
+    console.log(`Server running on http://localhost:${config.port}`);
+  });
+}
+
+export default app;

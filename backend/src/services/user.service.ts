@@ -119,7 +119,13 @@ export async function listUsers(
   take: number,
   filters?: { search?: string; role?: string }
 ) {
-  const where: { role?: Role; OR?: { name: { contains: string; mode: 'insensitive' }; phone: { contains: string; mode: 'insensitive' } }[] } = {};
+  const where: {
+    role?: Role;
+    OR?: Array<
+      | { name: { contains: string; mode: 'insensitive' } }
+      | { phone: { contains: string; mode: 'insensitive' } }
+    >;
+  } = {};
   if (filters?.role && (filters.role === 'USER' || filters.role === 'ADMIN')) {
     where.role = filters.role as Role;
   }
