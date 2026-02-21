@@ -53,7 +53,8 @@ export async function generateCategoryImage(categoryName: string): Promise<strin
       size: '512x512',
       response_format: 'b64_json',
     });
-    const b64 = response.data[0]?.b64_json;
+    const data = response.data;
+    const b64 = data?.[0]?.b64_json;
     if (!b64) throw new AppError('No image data from AI', 502);
     return `data:image/png;base64,${b64}`;
   } catch (err: unknown) {

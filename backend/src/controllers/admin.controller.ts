@@ -1,13 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
+import { Role } from '@prisma/client';
 import * as userService from '../services/user.service';
 import * as promptService from '../services/prompt.service';
 import * as categoryService from '../services/category.service';
+import * as aiService from '../services/ai.service';
 
 export async function listUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit), 10) || 10));
-    const result = await userService.listUsers((page - 1) * limit, limit);
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const role = typeof req.query.role === 'string' ? req.query.role : undefined;
+    const result = await userService.listUsers((page - 1) * limit, limit, { search, role });
     res.json({ data: result.data, total: result.total, page, limit });
   } catch (e) {
     next(e);
@@ -28,10 +32,10 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
   try {
     const { id } = req.params;
     const { name, phone, role } = req.body;
-    const payload: { name?: string; phone?: string; role?: string } = {};
+    const payload: userService.UpdateUserInput = {};
     if (name !== undefined) payload.name = name;
     if (phone !== undefined) payload.phone = phone;
-    if (role !== undefined) payload.role = role;
+    if (role !== undefined && Object.values(Role).includes(role)) payload.role = role as Role;
     const user = await userService.updateUser(id, payload);
     res.json({ data: user });
   } catch (e) {
@@ -53,7 +57,8 @@ export async function listPrompts(req: Request, res: Response, next: NextFunctio
   try {
     const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit), 10) || 10));
-    const result = await promptService.listPrompts(page, limit);
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const result = await promptService.listPrompts(page, limit, search);
     res.json({ data: result.data, total: result.total, page: result.page, limit: result.limit });
   } catch (e) {
     next(e);
@@ -79,8 +84,8 @@ export async function createCategory(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { name } = req.body;
-    const category = await categoryService.createCategory(name);
+    const { name, imageUrl } = req.body;
+    const category = await categoryService.createCategory(name, imageUrl);
     res.status(201).json({ data: category });
   } catch (e) {
     next(e);
@@ -94,9 +99,54 @@ export async function updateCategory(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const { name } = req.body;
-    const category = await categoryService.updateCategory(id, name);
+    const { name, imageUrl } = req.body;
+    const category = await categoryService.updateCategory(id, name, imageUrl);
     res.json({ data: category });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function generateCategoryImage(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const category = await categoryService.getCategoryById(id);
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
+    const dataUrl = await aiService.generateCategoryImage(category.name);
+    const categoryUpdated = await categoryService.setCategoryImage(id, dataUrl);
+    res.json({ data: categoryUpdated });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function uploadCategoryImage(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const file = (req as Request & { file?: Express.Multer.File & { buffer?: Buffer } }).file;
+    const buffer = file?.buffer;
+    if (!buffer) {
+      res.status(400).json({
+        error: 'No image file received. Use "Choose from PC" and select an image (JPEG, PNG, GIF, or WebP).',
+      });
+      return;
+    }
+    const base64 = buffer.toString('base64');
+    const mime = file.mimetype || 'image/png';
+    const dataUrl = `data:${mime};base64,${base64}`;
+    const categoryUpdated = await categoryService.setCategoryImage(id, dataUrl);
+    res.json({ data: categoryUpdated });
   } catch (e) {
     next(e);
   }
