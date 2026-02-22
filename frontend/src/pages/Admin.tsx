@@ -22,7 +22,7 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 type Tab = 'users' | 'prompts' | 'categories';
 
-type AdminPrompt = PromptItem & { user?: { id: string; email: string }; category?: { name: string }; subCategory?: { name: string } };
+type AdminPrompt = PromptItem & { user?: { id: string; email?: string; name?: string; phone?: string }; category?: { name: string }; subCategory?: { name: string } };
 
 export function Admin() {
   const [tab, setTab] = useState<Tab>('users');
@@ -220,8 +220,8 @@ export function Admin() {
     setError('');
     setAddingWithImage('generate');
     try {
-      const { data } = await adminApi.createCategory(newCategoryName.trim());
-      await adminApi.generateCategoryImage(data.id);
+      const res = await adminApi.createCategory(newCategoryName.trim());
+      await adminApi.generateCategoryImage(res.data.data.id);
       setNewCategoryName('');
       refreshCategories();
     } catch (err: unknown) {
@@ -248,8 +248,8 @@ export function Admin() {
     setError('');
     setAddingWithImage('upload');
     try {
-      const { data } = await adminApi.createCategory(newCategoryName.trim());
-      await adminApi.uploadCategoryImage(data.id, file);
+      const res = await adminApi.createCategory(newCategoryName.trim());
+      await adminApi.uploadCategoryImage(res.data.data.id, file);
       setNewCategoryName('');
       refreshCategories();
     } catch (err: unknown) {
