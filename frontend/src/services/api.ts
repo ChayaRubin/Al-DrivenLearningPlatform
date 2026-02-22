@@ -1,9 +1,11 @@
 import axios from 'axios';
 
+const RENDER_BACKEND = 'https://ai-driven-learning-backend.onrender.com';
+const envUrl = import.meta.env.VITE_API_URL as string | undefined;
 const API_BASE =
   import.meta.env.MODE === 'development'
     ? '/api'
-    : (import.meta.env.VITE_API_URL || 'https://ai-driven-learning-backend.onrender.com');
+    : (envUrl?.startsWith('http') ? envUrl : RENDER_BACKEND);
 
 export const api = axios.create({
   baseURL: API_BASE,
