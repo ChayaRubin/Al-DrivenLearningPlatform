@@ -24,7 +24,8 @@ npx prisma db seed
 npm run dev
 ```
 
-Backend: `http://localhost:3000`
+Backend: `http://localhost:3000`  
+API docs (Swagger): `http://localhost:3000/api-docs`
 
 ### 2. Frontend
 
@@ -51,7 +52,7 @@ frontend/         – React SPA (Vite)
 TODO.md           – Task checklist
 ```
 
-See `backend/README.md` for API details and env vars.
+See `backend/README.md` for API details, env vars, and how to run the API using Swagger.
 
 ## Assumptions
 

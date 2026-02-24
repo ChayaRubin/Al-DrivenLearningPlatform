@@ -79,6 +79,17 @@ npm run dev
 
 Server runs at `http://localhost:3000`.
 
+### API documentation (Swagger / OpenAPI)
+
+You can explore and try the API in the browser using Swagger UI:
+
+- **Local:** [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+- **Production (Render):** `https://<your-backend>.onrender.com/api-docs`
+
+In Swagger UI you can view all endpoints, request/response schemas, and use **Try it out** to send requests. For protected routes, click **Authorize** and paste a JWT (from `POST /auth/login` or `POST /auth/register`).
+
+### Main endpoints
+
 - `GET /health` – health check
 - `POST /auth/register` – register
 - `POST /auth/login` – login
