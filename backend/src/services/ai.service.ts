@@ -14,7 +14,7 @@ export async function generateLesson(
   }
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: config.openai.chatModel,
       messages: [
         {
           role: 'system',
@@ -34,7 +34,16 @@ export async function generateLesson(
     return text;
   } catch (err: unknown) {
     if (err instanceof Error) {
-      throw new AppError(`AI service error: ${err.message}`, 502);
+      const msg = err.message || '';
+      let hint = '';
+      if (msg.includes('403') && msg.includes('does not have access to model')) {
+        hint = ` (model: ${config.openai.chatModel}. Set OPENAI_CHAT_MODEL to a model your OpenAI project supports, e.g. gpt-4o)`;
+      } else if (msg.includes('401') && msg.includes('model.request')) {
+        hint =
+          ' Ask whoever manages your OpenAI account to enable the "model.request" scope for this key (or give you an unrestricted key). You need that permission to generate lessons.';
+      }
+      const status = msg.includes('401') && msg.includes('model.request') ? 403 : 502;
+      throw new AppError(`AI service error: ${msg}${hint}`, status);
     }
     throw new AppError('AI service error', 502);
   }

@@ -10,7 +10,8 @@ Copy `.env.example` to `.env` and set:
 
 - `DATABASE_URL` – PostgreSQL connection string (see Docker below)
 - `JWT_SECRET` – Secret for signing JWTs (use a strong value in production)
-- `OPENAI_API_KEY` – Your OpenAI API key for lesson generation
+- `OPENAI_API_KEY` – Your OpenAI API key for lesson generation. If you get **401 "Missing scopes: model.request"**, your key is restricted: in [OpenAI API Keys](https://platform.openai.com/api-keys) edit the key and enable the **model.request** scope, or create a new unrestricted key.
+- `OPENAI_CHAT_MODEL` – (Optional) Chat model for lessons. Default `gpt-3.5-turbo`. If you get **403 "Project does not have access to model"**, set this to a model your OpenAI project supports (e.g. `gpt-4o`, `gpt-4-turbo`). Check [OpenAI API → Models](https://platform.openai.com/docs/models) or your project’s usage/settings to see which model IDs you can use.
 
 ### 2. PostgreSQL – choose one
 
@@ -79,7 +80,7 @@ npm run dev
 
 Server runs at `http://localhost:3000`.
 
-### API documentation (Swagger / OpenAPI)
+### API documentation Swagger
 
 You can explore and try the API in the browser using Swagger UI:
 
@@ -104,6 +105,10 @@ In Swagger UI you can view all endpoints, request/response schemas, and use **Tr
 ## Troubleshooting
 
 **“Database doesn’t exist” / connection refused**
+
+**"401 Missing scopes: model.request"** – The API key doesn’t have permission to call the AI. If you have access to [OpenAI API Keys](https://platform.openai.com/api-keys), edit the key and add the **model.request** scope (or create an unrestricted key). If someone else gave you the key, ask them to enable **model.request** for that key or to provide an unrestricted key.
+
+**"403 Project does not have access to model"** – Set **`OPENAI_CHAT_MODEL`** to a model your OpenAI project supports (e.g. `gpt-4o`, `gpt-4-turbo`). Local: add to `.env`. Render: add env var in dashboard and redeploy.
 
 - **Docker:** Ensure Docker Desktop is running, then from `backend/`: `docker compose up -d`. Run `docker ps` to confirm the postgres container is up.
 - **Port 5432 in use:** Another app may be using it. Stop that service or change the port in `docker-compose.yml` (e.g. `"5433:5432"`) and use port 5433 in `DATABASE_URL`.

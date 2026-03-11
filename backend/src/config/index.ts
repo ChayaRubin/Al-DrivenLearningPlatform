@@ -14,5 +14,6 @@ export const config = {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
+    chatModel: process.env.OPENAI_CHAT_MODEL || 'gpt-3.5-turbo',
   },
 };
